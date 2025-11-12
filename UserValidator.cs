@@ -52,18 +52,19 @@ namespace Zachetdll
 
             string cleanPhone = phone.Replace(" ", "");
 
+            // Проверяем длину
             if (cleanPhone.Length != 12)
                 return (false, "Телефон должен содержать 12 символов (включая +7)");
 
-            if (cleanPhone[0] != '+')
-                return (false, "Телефон должен начинаться с +");
-
-            if (cleanPhone[1] != '7')
-                return (false, "Телефон должен начинаться с +7");
+            if (cleanPhone[0] != ('+'))
+                return (false, "Вы забыли +");
+            if (cleanPhone[1] != ('7'))
+                return (false, "Телефон должен начинаться с 7");
 
             if (cleanPhone[2] != '9')
                 return (false, "Третья цифра телефона должна быть 9");
 
+            // Проверяем что остальные символы - цифры
             for (int i = 3; i < cleanPhone.Length; i++)
             {
                 if (cleanPhone[i] < '0' || cleanPhone[i] > '9')
@@ -78,6 +79,7 @@ namespace Zachetdll
             if (string.IsNullOrWhiteSpace(email))
                 return (false, "Email не может быть пустым");
 
+            // Ищем символ @ вручную
             int atPosition = -1;
             int atCount = 0;
 
@@ -90,52 +92,57 @@ namespace Zachetdll
                 }
             }
 
+            // Проверяем что есть ровно один @
             if (atCount != 1)
                 return (false, "Email должен содержать один символ @");
 
+            // Проверяем что @ не в начале и не в конце
             if (atPosition <= 0 || atPosition >= email.Length - 1)
                 return (false, "Символ @ не может быть в начале или конце email");
 
-            int dotPosition = -1;
+            // Проверяем что есть хотя бы одна точка после @
+            bool hasDotAfterAt = false;
             for (int i = atPosition + 1; i < email.Length; i++)
             {
                 if (email[i] == '.')
                 {
-                    dotPosition = i;
+                    hasDotAfterAt = true;
+                    // Проверяем что после точки есть символы
+                    if (i >= email.Length - 1)
+                        return (false, "После точки должен быть домен");
                     break;
                 }
             }
 
-            if (dotPosition == -1)
+            if (!hasDotAfterAt)
                 return (false, "Email должен содержать точку после @");
 
-            if (dotPosition >= email.Length - 1)
-                return (false, "После точки должен быть домен");
-
-            if (dotPosition <= atPosition + 1)
-                return (false, "Между @ и точкой должен быть домен");
-
-            string localPart = "";
-            for (int i = 0; i < atPosition; i++)
+            // Упрощенная проверка символов (разрешаем точки в домене)
+            foreach (char c in email)
             {
-                localPart += email[i];
+                if (!IsValidEmailCharSimple(c))
+                    return (false, "Email содержит недопустимые символы");
             }
-
-            if (!IsValidEmailPart(localPart, true))
-                return (false, "Некорректная локальная часть email");
-
-            string domain = "";
-            for (int i = atPosition + 1; i < email.Length; i++)
-            {
-                domain += email[i];
-            }
-
-            if (!IsValidEmailPart(domain, false))
-                return (false, "Некорректная доменная часть email");
 
             return (true, "");
         }
 
+        private static bool IsValidEmailCharSimple(char c)
+        {
+            // Разрешаем: буквы, цифры, @, точка, дефис, подчеркивание
+            if ((c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= '0' && c <= '9') ||
+                c == '@' ||
+                c == '.' ||
+                c == '-' ||
+                c == '_')
+                return true;
+
+            return false;
+        }
+
+        // Проверка существующего пользователя
         public static bool UserExists(string fullName, string phone, string email, string filePath = "users.txt")
         {
             if (!File.Exists(filePath))
@@ -159,12 +166,14 @@ namespace Zachetdll
             return false;
         }
 
+        // Сохранение пользователя в файл
         public static void SaveUser(string fullName, string age, string phone, string email, string filePath = "users.txt")
         {
             string userData = $"{fullName}|{phone}|{email}|{age}";
             File.AppendAllLines(filePath, new[] { userData });
         }
 
+        // Получение всех пользователей
         public static List<string[]> GetUsers(string filePath = "users.txt")
         {
             var users = new List<string[]>();
@@ -185,40 +194,19 @@ namespace Zachetdll
             return users;
         }
 
+        // Вспомогательные методы
         private static bool IsValidNameChar(char c)
         {
+            // Русские буквы
             if ((c >= 'а' && c <= 'я') || (c >= 'А' && c <= 'Я') || c == 'ё' || c == 'Ё')
                 return true;
 
+            // Английские буквы
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
                 return true;
 
+            // Разрешенные специальные символы
             if (c == ' ' || c == '-')
-                return true;
-
-            return false;
-        }
-
-        private static bool IsValidEmailPart(string part, bool isLocalPart)
-        {
-            if (string.IsNullOrEmpty(part))
-                return false;
-
-            foreach (char c in part)
-            {
-                if (!IsValidEmailChar(c, isLocalPart))
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool IsValidEmailChar(char c, bool isLocalPart)
-        {
-            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))
-                return true;
-
-            if (c == '-' || (c == '.' && isLocalPart))
                 return true;
 
             return false;
