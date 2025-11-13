@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Zachetdll
 {
@@ -52,19 +50,17 @@ namespace Zachetdll
 
             string cleanPhone = phone.Replace(" ", "");
 
-            // Проверяем длину
             if (cleanPhone.Length != 12)
                 return (false, "Телефон должен содержать 12 символов (включая +7)");
 
-            if (cleanPhone[0] != ('+'))
+            if (cleanPhone[0] != '+')
                 return (false, "Вы забыли +");
-            if (cleanPhone[1] != ('7'))
+            if (cleanPhone[1] != '7')
                 return (false, "Телефон должен начинаться с 7");
 
             if (cleanPhone[2] != '9')
                 return (false, "Третья цифра телефона должна быть 9");
 
-            // Проверяем что остальные символы - цифры
             for (int i = 3; i < cleanPhone.Length; i++)
             {
                 if (cleanPhone[i] < '0' || cleanPhone[i] > '9')
@@ -79,7 +75,6 @@ namespace Zachetdll
             if (string.IsNullOrWhiteSpace(email))
                 return (false, "Email не может быть пустым");
 
-            // Ищем символ @ вручную
             int atPosition = -1;
             int atCount = 0;
 
@@ -92,22 +87,18 @@ namespace Zachetdll
                 }
             }
 
-            // Проверяем что есть ровно один @
             if (atCount != 1)
                 return (false, "Email должен содержать один символ @");
 
-            // Проверяем что @ не в начале и не в конце
             if (atPosition <= 0 || atPosition >= email.Length - 1)
                 return (false, "Символ @ не может быть в начале или конце email");
 
-            // Проверяем что есть хотя бы одна точка после @
             bool hasDotAfterAt = false;
             for (int i = atPosition + 1; i < email.Length; i++)
             {
                 if (email[i] == '.')
                 {
                     hasDotAfterAt = true;
-                    // Проверяем что после точки есть символы
                     if (i >= email.Length - 1)
                         return (false, "После точки должен быть домен");
                     break;
@@ -117,32 +108,15 @@ namespace Zachetdll
             if (!hasDotAfterAt)
                 return (false, "Email должен содержать точку после @");
 
-            // Упрощенная проверка символов (разрешаем точки в домене)
             foreach (char c in email)
             {
-                if (!IsValidEmailCharSimple(c))
+                if (!IsValidEmailChar(c))
                     return (false, "Email содержит недопустимые символы");
             }
 
             return (true, "");
         }
 
-        private static bool IsValidEmailCharSimple(char c)
-        {
-            // Разрешаем: буквы, цифры, @, точка, дефис, подчеркивание
-            if ((c >= 'a' && c <= 'z') ||
-                (c >= 'A' && c <= 'Z') ||
-                (c >= '0' && c <= '9') ||
-                c == '@' ||
-                c == '.' ||
-                c == '-' ||
-                c == '_')
-                return true;
-
-            return false;
-        }
-
-        // Проверка существующего пользователя
         public static bool UserExists(string fullName, string phone, string email, string filePath = "users.txt")
         {
             if (!File.Exists(filePath))
@@ -166,46 +140,34 @@ namespace Zachetdll
             return false;
         }
 
-        // Сохранение пользователя в файл
         public static void SaveUser(string fullName, string age, string phone, string email, string filePath = "users.txt")
         {
             string userData = $"{fullName}|{phone}|{email}|{age}";
             File.AppendAllLines(filePath, new[] { userData });
         }
 
-        // Получение всех пользователей
-        public static List<string[]> GetUsers(string filePath = "users.txt")
+        private static bool IsValidEmailChar(char c)
         {
-            var users = new List<string[]>();
+            if ((c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                (c >= '0' && c <= '9') ||
+                c == '@' ||
+                c == '.' ||
+                c == '-' ||
+                c == '_')
+                return true;
 
-            if (File.Exists(filePath))
-            {
-                var lines = File.ReadAllLines(filePath);
-                foreach (var line in lines)
-                {
-                    var parts = line.Split('|');
-                    if (parts.Length >= 4)
-                    {
-                        users.Add(parts);
-                    }
-                }
-            }
-
-            return users;
+            return false;
         }
 
-        // Вспомогательные методы
         private static bool IsValidNameChar(char c)
         {
-            // Русские буквы
             if ((c >= 'а' && c <= 'я') || (c >= 'А' && c <= 'Я') || c == 'ё' || c == 'Ё')
                 return true;
 
-            // Английские буквы
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
                 return true;
 
-            // Разрешенные специальные символы
             if (c == ' ' || c == '-')
                 return true;
 
